@@ -26,11 +26,11 @@ dialogModule.provider("$dialog", function(){
     keyboard: true, // close with esc key
     backdropClick: true // only in conjunction with backdrop=true
     /* other options: template, templateUrl, controller */
-	};
+  };
 
-	var globalOptions = {};
+  var globalOptions = {};
 
-  var activeBackdrops = {value : 0};
+  var activeDialogs = [];
 
   // The `options({})` allows global configuration of all dialogs in the application.
   //
@@ -38,21 +38,34 @@ dialogModule.provider("$dialog", function(){
   //        // don't close dialog when backdrop is clicked by default
   //        $dialogProvider.options({backdropClick: false});
   //      });
-	this.options = function(value){
-		globalOptions = value;
-	};
+  this.options = function(value){
+    globalOptions = value;
+  };
 
   // Returns the actual `$dialog` service that is injected in controllers
-	this.$get = ["$http", "$document", "$compile", "$rootScope", "$controller", "$templateCache", "$q", "$transition", "$injector",
+  this.$get = ["$http", "$document", "$compile", "$rootScope", "$controller", "$templateCache", "$q", "$transition", "$injector",
   function ($http, $document, $compile, $rootScope, $controller, $templateCache, $q, $transition, $injector) {
 
-		var body = $document.find('body');
+    var body = $document.find('body');
 
-		function createElement(clazz) {
-			var el = angular.element("<div>");
-			el.addClass(clazz);
-			return el;
-		}
+    function createElement(clazz) {
+      var el = angular.element("<div>");
+      el.addClass(clazz);
+      return el;
+    }
+
+    function handleEscapeKey(e) {
+      if (e.which === 27) {
+        var topDialog = activeDialogs[activeDialogs.length - 1];
+
+        if(topDialog.options.keyboard){
+          e.preventDefault();
+
+          topDialog.close();
+          topDialog.$scope.$apply();
+        }
+      }
+    }
 
     // The `Dialog` class represents a modal dialog. The dialog class can be invoked by providing an options object
     // containing at lest template or templateUrl and controller:
@@ -62,7 +75,7 @@ dialogModule.provider("$dialog", function(){
     // Dialogs can also be created using templateUrl and controller as distinct arguments:
     //
     //     var d = new Dialog('path/to/dialog.html', MyDialogController);
-		function Dialog(opts) {
+    function Dialog(opts) {
 
       var self = this, options = this.options = angular.extend({}, defaults, globalOptions, opts);
       this._open = false;
@@ -183,12 +196,12 @@ dialogModule.provider("$dialog", function(){
     };
 
     Dialog.prototype._bindEvents = function() {
-      if(this.options.keyboard){ body.bind('keydown', this.handledEscapeKey); }
+      if(activeDialogs.length === 1){ body.bind('keydown', handleEscapeKey); }
       if(this.options.backdrop && this.options.backdropClick){ this.backdropEl.bind('click', this.handleBackDropClick); }
     };
 
     Dialog.prototype._unbindEvents = function() {
-      if(this.options.keyboard){ body.unbind('keydown', this.handledEscapeKey); }
+      if(activeDialogs.length === 0){ body.unbind('keydown', handleEscapeKey); }
       if(this.options.backdrop && this.options.backdropClick){ this.backdropEl.unbind('click', this.handleBackDropClick); }
     };
 
@@ -201,26 +214,25 @@ dialogModule.provider("$dialog", function(){
 
     Dialog.prototype._addElementsToDom = function(){
       body.append(this.modalEl);
+      this.modalEl.css('z-index', 1050 + 20 * activeDialogs.length);
 
-      if(this.options.backdrop) { 
-        if (activeBackdrops.value === 0) {
-          body.append(this.backdropEl); 
-        }
-        activeBackdrops.value++;
+      if(this.options.backdrop) {
+        body.append(this.backdropEl);
+        this.backdropEl.css('z-index', 1040 + 20 * activeDialogs.length);
       }
 
+      activeDialogs.push(this);
       this._open = true;
     };
 
     Dialog.prototype._removeElementsFromDom = function(){
       this.modalEl.remove();
 
-      if(this.options.backdrop) { 
-        activeBackdrops.value--;
-        if (activeBackdrops.value === 0) {
-          this.backdropEl.remove(); 
-        }
+      if(this.options.backdrop) {
+        this.backdropEl.remove();
       }
+
+      activeDialogs.splice(activeDialogs.indexOf(this), 1);
       this._open = false;
     };
 
