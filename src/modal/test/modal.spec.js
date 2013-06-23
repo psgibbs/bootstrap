@@ -31,16 +31,16 @@ describe('Give ui.boostrap.modal', function() {
 		for (var i = 0; i< 5; i++) {
 			elems[i] = $compile(templateGenerator('modalShown' + i))($scope);
 			$scope.$apply('modalShown' + i + ' = true');
-		}	
-		expect($document.find('body > div.modal-backdrop').length).toBe(1);
+		}
+		expect($document.find('body > div.modal-backdrop').length).toBe(5);
 		expect($document.find('body > div.modal').length).toBe(numberOfSimultaneousModals);
 
 		for (i = 0; i< 5; i++) {
 			$scope.$apply('modalShown' + i + ' = false');
-		}	
+		}
 	});
 
-	it('should work with expression instead of a variable', function() {			
+	it('should work with expression instead of a variable', function() {
 		$scope.foo = true;
 		$scope.shown = function() { return $scope.foo; };
 		elm = $compile(templateGenerator('shown()'))($scope);
