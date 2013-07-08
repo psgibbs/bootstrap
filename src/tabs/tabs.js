@@ -1,4 +1,3 @@
-
 /**
  * @ngdoc overview
  * @name ui.bootstrap.tabs
@@ -297,6 +296,7 @@ function($parse, $http, $templateCache, $compile) {
         if (tab) {
           elm.append(tab.contentElement);
           $compile(tab.contentElement)(outerScope);
+          $compile(tab.headingElement)(outerScope);
         }
       });
     }
