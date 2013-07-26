@@ -59,7 +59,7 @@ describe('Given ui.bootstrap.dialog', function(){
 	var clearGlobalOptions = function(){
 		provider.options({});
 	};
-	
+
 
 	var dialogShouldBeClosed = function(){
 		it('should not include a backdrop in the DOM', function(){
@@ -195,6 +195,41 @@ describe('Given ui.bootstrap.dialog', function(){
 		it('should inject simple values in the controller', function(){
 			expect(resolvedFoo).toBe('foo');
 		});
+	});
+
+	describe('When opening a dialog with failed resolves', function(){
+
+		var  deferred, foo, resolveError;
+		function Ctrl(foo, bar){
+			resolvedFoo = foo;
+			resolvedBar = bar;
+		}
+
+		beforeEach(function(){
+			deferred = q.defer();
+			resolveObj = {
+				foo: function(){return 'foo';},
+				bar: function(){return deferred.promise;}
+			};
+
+			createDialog({template:template, resolve: resolveObj, controller: Ctrl});
+			deferred.reject('fail');
+
+			dialog.open().then(function(res){
+				resolveError="win";
+			}, function(err){
+				resolveError="fail";
+			});
+
+			$rootScope.$apply();
+		});
+
+		dialogShouldBeClosed();
+
+		it('should reject according to the failed resolve', function(){
+			expect(resolveError).toBe('fail');
+		});
+
 	});
 
 	describe('when closing a dialog', function(){

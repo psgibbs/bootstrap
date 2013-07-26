@@ -132,6 +132,8 @@ dialogModule.provider("$dialog", function(){
         throw new Error('Dialog.open expected template or templateUrl, neither found. Use options or open method to specify them.');
       }
 
+      var deferred = this.deferred = $q.defer();
+
       this._loadResolves().then(function(locals) {
         var $scope = locals.$scope = self.$scope = locals.$scope ? locals.$scope : $rootScope.$new();
 
@@ -152,9 +154,10 @@ dialogModule.provider("$dialog", function(){
         });
 
         self._bindEvents();
+      }, function(reason){
+        deferred.reject(reason);
       });
 
-      this.deferred = $q.defer();
       return this.deferred.promise;
     };
 
